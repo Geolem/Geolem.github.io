@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="Look Back And Look Forward" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":true},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="#centos7下nginx高并发配置##系统层优化 系统信息查看  确认是64位还是32位:  uname -a    核数—&amp;gt;  cat &#x2F;proc&#x2F;cpuinfo | grep name | cut -f2 -d: | uniq -c    逻辑CPU信息:  cat &#x2F;proc&#x2F;cpuinfo | grep physical | uniq -c    CPU运行在多少位模式下:  g">
+<meta property="og:type" content="article">
+<meta property="og:title" content="centos7下nginx高并发配置">
+<meta property="og:url" content="https:&#x2F;&#x2F;huazhiy.xyz&#x2F;2019&#x2F;01&#x2F;17&#x2F;centos7%E4%B8%8Bnginx%E9%AB%98%E5%B9%B6%E5%8F%91%E9%85%8D%E7%BD%AE&#x2F;index.html">
+<meta property="og:site_name" content="Look Back And Look Forward">
+<meta property="og:description" content="#centos7下nginx高并发配置##系统层优化 系统信息查看  确认是64位还是32位:  uname -a    核数—&amp;gt;  cat &#x2F;proc&#x2F;cpuinfo | grep name | cut -f2 -d: | uniq -c    逻辑CPU信息:  cat &#x2F;proc&#x2F;cpuinfo | grep physical | uniq -c    CPU运行在多少位模式下:  g">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-01-17T06:23:06.298Z">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://huazhiy.xyz/2019/01/17/centos7%E4%B8%8Bnginx%E9%AB%98%E5%B9%B6%E5%8F%91%E9%85%8D%E7%BD%AE/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>centos7下nginx高并发配置 | Look Back And Look Forward</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Look Back And Look Forward</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">YOU</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://huazhiy.xyz/2019/01/17/centos7%E4%B8%8Bnginx%E9%AB%98%E5%B9%B6%E5%8F%91%E9%85%8D%E7%BD%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="huazhiy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Look Back And Look Forward">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          centos7下nginx高并发配置
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2019-01-17 11:00:29 / 修改时间：14:23:06" itemprop="dateCreated datePublished" datetime="2019-01-17T11:00:29+08:00">2019-01-17</time>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="centos7下nginx高并发配置"><a href="#centos7下nginx高并发配置" class="headerlink" title="#centos7下nginx高并发配置"></a>#centos7下nginx高并发配置</h2><p>##系统层优化</p><ol>
+<li><p>系统信息查看</p>
+<blockquote>
+<p>确认是64位还是32位:</p>
+<blockquote>
+<p>uname -a</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>核数—&gt;</p>
+<blockquote>
+<p>cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>逻辑CPU信息:</p>
+<blockquote>
+<p>cat /proc/cpuinfo | grep physical | uniq -c</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>CPU运行在多少位模式下:</p>
+<blockquote>
+<p>getconf LONG_BIT</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>查看环境变量:</p>
+<blockquote>
+<p>env</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>查看平均负载情况[除了前3个数字表示平均进程数量外，后面的1个分数，分母表示系统进程总数，分子表示正在运行的进程数；最后一个数字表示最近运行的进程ID]:</p>
+<blockquote>
+<p>cat /proc/loadavg</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>内存的详细信息:</p>
+<blockquote>
+<p>cat /proc/meminfo</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>查看所有网络接口的属性:</p>
+<blockquote>
+<p>ifconfig</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>带宽:</p>
+<blockquote>
+<p>ethtool 网卡名</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>查看路由表</p>
+<blockquote>
+<p>route -n</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>查看所有已经建立的连接:</p>
+<blockquote>
+<p>netstat -antp</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>某端口使用情况:</p>
+<blockquote>
+<p>lsof -i:端口号<br>netstat -apn|grep 端口号</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>查看系统所有用户:</p>
+<blockquote>
+<p>cut -d: -f1 /etc/passwd</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>查看当前使用的拥塞算法</p>
+<blockquote>
+<p>sysctl net.ipv4.tcp_available_congestion_control<br>lsmod | grep bbr</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p>优化TCP连接数[/etc/sysctl.conf]</p>
+<blockquote>
+<p>修改/etc/sysctl.conf</p>
+<blockquote>
+<p>vi /etc/sysctl.conf</p>
+</blockquote>
+</blockquote>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">kernel.pid_max = 64512</span><br><span class="line">net.ipv4.tcp_max_syn_backlog = 4096</span><br><span class="line">net.ipv4.icmp_echo_ignore_broadcasts = 1</span><br><span class="line">net.ipv4.tcp_timestamps = 0</span><br><span class="line">net.ipv4.tcp_fin_timeout = 30</span><br><span class="line">net.ipv4.tcp_keepalive_time = 300</span><br><span class="line">net.ipv4.tcp_keepalive_probes = 4</span><br><span class="line">net.ipv4.tcp_tw_reuse = 1</span><br><span class="line">net.ipv4.tcp_tw_recycle = 1</span><br><span class="line">net.ipv4.tcp_max_tw_buckets = 6000</span><br><span class="line">net.ipv4.tcp_syncookies = 1</span><br><span class="line"></span><br><span class="line">net.ipv4.tcp_rmem = 4096</span><br><span class="line">net.ipv4.tcp_wmem = 4096</span><br><span class="line">net.ipv4.ip_local_port_range = 1024 65000</span><br><span class="line">net.core.rmem_max = 8388608</span><br><span class="line">net.core.wmem_max = 8388608</span><br><span class="line">net.core.somaxconn = 262144</span><br><span class="line">net.core.netdev_max_backlog = 262144</span><br><span class="line"></span><br><span class="line">net.nf_conntrack_max = 655360</span><br><span class="line">net.netfilter.nf_conntrack_tcp_timeout_established = 180</span><br><span class="line"></span><br><span class="line">vm.overcommit_memory = 1</span><br><span class="line"></span><br><span class="line">#以下bbr加速模式需要内核4.9.0以上</span><br><span class="line">#net.core.default_qdisc = fq</span><br><span class="line">#net.ipv4.tcp_congestion_control = bbr</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>使配置生效</p>
+<blockquote>
+<p>/sbin/sysctl -p</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p>调整最大文件打开数</p>
+<blockquote>
+<p>vim /etc/security/limits.conf</p>
+</blockquote>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">* soft nofile 65535</span><br><span class="line">* hard nofile 65535</span><br><span class="line">* soft nproc  10240</span><br><span class="line">* hard nproc  10240</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>vim /etc/security/limits.d/20-nproc.conf</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">* soft nproc  10240</span><br><span class="line">* root       soft    nproc     unlimited</span><br></pre></td></tr></table></figure>
+</blockquote>
+<blockquote>
+<p>或者加入开机启动每次自动设置<br>vim /etc/rc.local</p>
+</blockquote>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ulimit -SHn 65535</span><br><span class="line">ulimit -s 65535</span><br></pre></td></tr></table></figure></li>
+<li><p>调整字符集，使其支持中文</p>
+<blockquote>
+<p>locale -a  可通过grep过滤查看是否有中文语言包<br>如果没有语言包</p>
+<blockquote>
+<p>yum install kde-l10n-Chinese<br>yum reinstall glibc-common</p>
+</blockquote>
+</blockquote>
+<blockquote>
+<p>vim /etc/locale.conf</p>
+</blockquote>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">	</span><br><span class="line">	&gt;source /etc/locale.conf</span><br><span class="line"></span><br><span class="line">##nginx优化配置参考[nginx.conf]</span><br></pre></td></tr></table></figure>
+<p>user   www www;<br>#nginx进程数，建议按照cpu数目来指定，一般跟cpu核数相同或为它的倍数<br>worker_processes 8;<br>worker_cpu_affinity 00000001 00000010 00000100 00001000 00010000 00100000 01000000;<br>error_log   /www/log/nginx_error.log   crit;<br>pid         /usr/local/nginx/nginx.pid;<br>worker_rlimit_nofile 65535;<br>tcp_nopush on;<br>server_tokens off;</p>
+</li>
+</ol><a id="more"></a>
+
+<p>events<br>{<br>   use epoll;<br>   worker_connections 65535;<br>}</p>
+<p>http<br>{<br>   include       mime.types;<br>   default_type   application/octet-stream;</p>
+<p>   charset   utf-8;</p>
+<p>   server_names_hash_bucket_size 128;<br>   client_header_buffer_size 2k;<br>   large_client_header_buffers 4 4k;<br>   client_max_body_size 8m;</p>
+<p>   sendfile on;<br>   tcp_nopush     on;</p>
+<p>   keepalive_timeout 60;</p>
+<p>   fastcgi_cache_path /usr/local/nginx/fastcgi_cache levels=1:2<br>                 keys_zone=TEST:10m<br>                 inactive=5m;<br>   fastcgi_connect_timeout 300;<br>   fastcgi_send_timeout 300;<br>   fastcgi_read_timeout 300;<br>   fastcgi_buffer_size 16k;<br>   fastcgi_buffers 16 16k;<br>   fastcgi_busy_buffers_size 16k;<br>   fastcgi_temp_file_write_size 16k;<br>   fastcgi_cache TEST;<br>   fastcgi_cache_valid 200 302 1h;<br>   fastcgi_cache_valid 301 1d;<br>   fastcgi_cache_valid any 1m;<br>   fastcgi_cache_min_uses 1;<br>   fastcgi_cache_use_stale error timeout invalid_header http_500;<br>   open_file_cache max=204800 inactive=20s;<br>   open_file_cache_min_uses 1;<br>   open_file_cache_valid 30s; </p>
+<p>   tcp_nodelay on;</p>
+<p>   gzip on;<br>   gzip_min_length   1k;<br>   gzip_buffers     4 16k;<br>   gzip_http_version 1.0;<br>   gzip_comp_level 2;<br>   gzip_types       text/plain application/x-javascript text/css application/xml;<br>   gzip_vary on;</p>
+<p>   server<br>   {<br>     listen       8080;<br>     server_name   huan.wangshibo.com;<br>     index index.php index.htm;<br>     root   /www/html/;</p>
+<pre><code>location /status
+{
+    stub_status on;
+}
+
+location ~ .*\.(php|php5)?$
+{
+    fastcgi_pass 127.0.0.1:9000;
+    fastcgi_index index.php;
+    include fcgi.conf;
+}
+
+location ~ .*\.(gif|jpg|jpeg|png|bmp|swf|js|css)$
+{
+  expires       30d;
+}
+
+log_format   access   &apos;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &apos;
+          &apos;$status $body_bytes_sent &quot;$http_referer&quot; &apos;
+          &apos;&quot;$http_user_agent&quot; $http_x_forwarded_for&apos;;
+access_log   /www/log/access.log   access;
+  }</code></pre><p>}</p>
+<pre><code></code></pre>
+    </div>
+
+    
+    
+    
+      
+
+
+      <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2018/12/19/linux%E6%97%A5%E5%BF%97%E5%88%87%E5%89%B2logrotate%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/" rel="next" title="linux日志切割logrotate安装配置">
+                  <i class="fa fa-chevron-left"></i> linux日志切割logrotate安装配置
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+                <a href="/2019/03/04/jenkens%E5%9C%A8centos7%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2%E4%BD%BF%E7%94%A8/" rel="prev" title="jenkens在centos7安装部署使用">
+                  jenkens在centos7安装部署使用 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#centos7下nginx高并发配置"><span class="nav-number">1.</span> <span class="nav-text">#centos7下nginx高并发配置</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <img class="site-author-image" itemprop="image" alt="huazhiy"
+    src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">huazhiy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Geolem" title="GitHub &amp;rarr; https:&#x2F;&#x2F;github.com&#x2F;Geolem" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://google.com/" title="https:&#x2F;&#x2F;google.com&#x2F;" rel="noopener" target="_blank">Google</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">huazhiy</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">27k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">25 分钟</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='0,0,255' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/muse.js"></script>
+<script src="/js/next-boot.js"></script>
+
+  <script defer src="/lib/three/three.min.js"></script>
+    <script defer src="/lib/three/three-waves.min.js"></script>
+
+
+  
+
+
+
+
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
