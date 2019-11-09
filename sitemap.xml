@@ -2,6 +2,20 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://huazhiy.xyz/categories/index.html</loc>
+    
+    <lastmod>2019-11-09T16:32:47.281Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://huazhiy.xyz/tags/index.html</loc>
+    
+    <lastmod>2019-11-09T16:31:21.878Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://huazhiy.xyz/2018/12/19/linux%25E6%2597%25A5%25E5%25BF%2597%25E5%2588%2587%25E5%2589%25B2logrotate%25E5%25AE%2589%25E8%25A3%2585%25E9%2585%258D%25E7%25BD%25AE/</loc>
     
     <lastmod>2019-11-09T16:02:20.637Z</lastmod>
